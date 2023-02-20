@@ -20,7 +20,10 @@ Expects project's directory structure as:
 
  * Expects relative path to the query image in the same directory, otherwise provides absolute path.
 
+* Edit [config.py](config.py) for your specific need. Otherwise leaves as default
+
 ## Run
+
 1. Install dependencies
 ```
 pip install -r requirements.txt
