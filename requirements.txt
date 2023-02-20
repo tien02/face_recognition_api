@@ -1,0 +1,2 @@
+deepface==0.0.75
+Pillow==9.4.0

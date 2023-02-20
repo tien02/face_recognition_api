@@ -102,6 +102,12 @@ def changeImageName(src_path:str, dst_path:str):
         return False
 
 def deleteImage(img_path:str):
+    '''
+    Delete Image from image path
+
+    Arguments:
+        img_path (str) Path to the image
+    '''
     if not isinstance(img_path, str):
         raise TypeError("Only string is accepted, expect a image path as string.")
     
