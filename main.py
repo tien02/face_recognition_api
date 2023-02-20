@@ -14,7 +14,7 @@ async def root():
     }
 
 @app.get("/face-recognition")
-async def face_recognition(query_img_path:str) -> str:
+async def face_recognition(query_img_path:str=Query(..., description="Path to the query image file")) -> str:
 
     '''
     Do Face Recognition task, give the image which is 
@@ -50,7 +50,7 @@ async def face_recognition(query_img_path:str) -> str:
         return "No Image Found"
 
 @app.post('/face_register')
-async def face_register(input_path:str, img_name: str):
+async def face_register(input_path:str = Query(..., description="Path to input image"), img_name: str=Query(..., description="Image name")):
     '''
     Add new user to the database for Face Recognition task 
     by registering. Resize image if necessary.
@@ -82,7 +82,7 @@ async def face_register(input_path:str, img_name: str):
     
 
 @app.put('/change-image-name')
-async def change_img_name(src_path:str, img_name:str):
+async def change_img_name(src_path:str = Query(..., description="File image going to be change"), img_name:str = Query(..., description="New name")):
     '''
     Change file name in database
 
@@ -118,7 +118,7 @@ async def del_img(img_path:str = Query(..., description="Path to the image need 
         img_path (str) Path to the image (e.g: images/img1.jpeg)
     '''
     if not os.path.exists(img_path):
-        raise HTTPException(status_code=404, detail='Path to the image is not exist!')
+        raise HTTPException(status_code=404, detail=f'Path to {img_path} is not exist!')
     
     os.remove(img_path)
 
