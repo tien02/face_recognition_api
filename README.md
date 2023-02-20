@@ -31,7 +31,7 @@ pip install -r requirements.txt
 
 2. Run the server
 ```
-uvicorn main:app
+uvicorn main:app --host 0.0.0.0 --port 80
 ```
-* Add `--reload` flag to enable Debug mode.
+* Add `--reload` flag to enable live mode.
 * Go to `localhost:{port}/docs` for iterative API docs, check [doc](https://fastapi.tiangolo.com/#interactive-api-docs) for more information.
