@@ -1,2 +1,4 @@
 deepface==0.0.75
+fastapi==0.92.0
+uvicorn==0.20.0
 Pillow==9.4.0

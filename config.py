@@ -7,8 +7,8 @@ MODEL_ID = 2
 DETECTOR_ID = 0
 
 ### Data Config
-DB_PATH = "img_db"  # relative path to images database
-RESIZE = True
+DB_PATH = "img_db"  # relative path to images database (in this case is a folder of image)
+RESIZE = False
 SIZE = (300, 300)
 
 #### -----------------!!!----------------- ###
