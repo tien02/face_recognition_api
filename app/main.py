@@ -8,13 +8,13 @@ from fastapi import FastAPI, Query, HTTPException
 app = FastAPI()
 
 @app.get("/")
-async def root():
+def root():
     return {
         "message": "Welcome to Face Recognition API!"
     }
 
 @app.get("/face-recognition")
-async def face_recognition(query_img_path:str=Query(..., description="Path to the query image file")) -> str:
+def face_recognition(query_img_path:str=Query(..., description="Path to the query image file")) -> str:
 
     '''
     Do Face Recognition task, give the image which is 
@@ -50,7 +50,7 @@ async def face_recognition(query_img_path:str=Query(..., description="Path to th
         return "No Image Found"
 
 @app.post('/face_register')
-async def face_register(input_path:str = Query(..., description="Path to input image"), img_name: str=Query(..., description="Image name")):
+def face_register(input_path:str = Query(..., description="Path to input image"), img_name: str=Query(..., description="Image name")):
     '''
     Add new user to the database for Face Recognition task 
     by registering. Resize image if necessary.
@@ -82,7 +82,7 @@ async def face_register(input_path:str = Query(..., description="Path to input i
     
 
 @app.put('/change-image-name')
-async def change_img_name(src_path:str = Query(..., description="File image going to be change"), img_name:str = Query(..., description="New name")):
+def change_img_name(src_path:str = Query(..., description="File image going to be change"), img_name:str = Query(..., description="New name")):
     '''
     Change file name in database
 
@@ -110,7 +110,7 @@ async def change_img_name(src_path:str = Query(..., description="File image goin
     }
 
 @app.delete('/delete')
-async def del_img(img_path:str = Query(..., description="Path to the image need to be deleted")):
+def del_img(img_path:str = Query(..., description="Path to the image need to be deleted")):
     '''
     Delete Image from image path
 
