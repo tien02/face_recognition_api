@@ -13,6 +13,11 @@ def remove_representation():
             if os.path.exists(representation):
                 os.remove(representation)
 
+def check_empty_db():
+    if len(os.listdir(config.DB_PATH)) == 0:
+        return True
+    return False
+
 def show_img(input_path:str):
     '''
     Read image from path and show

@@ -8,7 +8,7 @@ DETECTOR_ID = 0
 
 ### Data Config
 DB_PATH = "app/data"  # relative path to images database (in this case is a folder of image)
-RESIZE = True
+RESIZE = False
 SIZE = (300, 300)
 
 #### -----------------!!!----------------- ###

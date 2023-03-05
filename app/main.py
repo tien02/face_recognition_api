@@ -1,10 +1,15 @@
 import os 
+import glob
 import shutil
 import app.config as config
+import cv2 as cv
 from PIL import Image
 from deepface import DeepFace
-from app.utils import remove_representation
+from app.utils import remove_representation, check_empty_db
+
 from fastapi import FastAPI, Query, HTTPException, File, UploadFile
+
+import numpy as np
 
 app = FastAPI()
 
@@ -27,6 +32,15 @@ def face_recognition(
 
     Return path to the most similar image file
     '''
+    
+    empty = check_empty_db()
+    if empty:
+        return "No image found in the database"
+
+    if len(os.listdir(config.DB_PATH)) == 0:
+        return {
+            "message": "No image found in the database."
+        }
     
     if not os.path.exists("query"):
         os.makedirs("query")
@@ -64,7 +78,7 @@ def face_recognition(
 
 @app.post('/register')
 def face_register(
-    img_file: UploadFile = File(..., description="Upload Image"),
+    img_file: UploadFile | None = File(None, description="Upload Image"),
     img_save_name: str | None = Query(
         default=None,
         description="File's name to be save, file extension can be available or not",
@@ -72,10 +86,16 @@ def face_register(
     '''
     Add new user to the database by face registering. Resize image if necessary.
     '''
+
+    if img_file is None:
+        return {
+            "message": "Image file need to be sent!",
+        }
+
+    save_img_dir = ''
     if img_save_name is not None:
 
         extension = img_file.filename.split(".")[-1]
-
         if "." in img_save_name:
             img_save_name_extension = img_save_name.split(".")[-1]
             if extension != img_save_name_extension:
@@ -84,8 +104,11 @@ def face_register(
 
         else:
             save_img_dir = os.path.join(config.DB_PATH, img_save_name + "." + extension)
-
-
+        
+    
+    else:
+        save_img_dir = os.path.join(config.DB_PATH, img_file.filename)
+    
     if os.path.exists(save_img_dir):
         raise HTTPException(status_code=409, detail=f"{save_img_dir} has already in the database.")
     
@@ -95,7 +118,10 @@ def face_register(
             if image.mode in ("RGBA", "P"):
                 image = image.convert("RGB")
             image = image.resize(config.SIZE)
-            image.save(save_img_dir)
+            np_image = np.array(image)
+            np_image = cv.cvtColor(np_image, cv.COLOR_RGB2BGR)
+
+            cv.imwrite(save_img_dir, np_image)
         except:
             raise HTTPException(status_code=500, detail="Something went wrong when saving the image")
         finally:
@@ -111,9 +137,11 @@ def face_register(
         "message": f"{img_file.filename} has been save at {save_img_dir}.",
     }
     
-
 @app.put('/change-file-name')
-def change_img_name(src_path:str = Query(..., description="File image going to be change"), img_name:str = Query(..., description="New name")):
+def change_img_name(
+    src_path:str = Query(..., description="File image going to be change"), 
+    img_name:str = Query(..., description="New name")
+    ):
     '''
     Change file name in database
 
@@ -123,6 +151,13 @@ def change_img_name(src_path:str = Query(..., description="File image going to b
     Returns:
         images/img1.jpeg -> images/im2.jpeg
     '''
+
+    empty = empty = check_empty_db()
+    if empty:
+        return "No image found in the database"
+
+    src_path = os.path.join(config.DB_PATH, src_path)
+    
     new_path = "/".join(src_path.split("/")[:-1]) + "/" + img_name
     if "." not in img_name:
         extension = src_path.split(".")[1]
@@ -148,6 +183,12 @@ def del_img(img_path:str = Query(..., description="Path to the image need to be 
     Arguments:
         img_path (str) Path to the image (e.g: images/img1.jpeg)
     '''
+    empty = check_empty_db()
+    if empty:
+        return "No image found in the database"
+
+    img_path = os.path.join(config.DB_PATH, img_path)
+
     if not os.path.exists(img_path):
         raise HTTPException(status_code=404, detail=f'Path to {img_path} is not exist!')
     
@@ -162,8 +203,13 @@ def del_db():
     '''
     Delete all image file in database ~ Delete database
     '''
-    for img in os.listdir(config.DB_PATH):
-        os.remove(img)
+    empty = check_empty_db()
+    if empty:
+        return "No image found in the database"
+
+    
+    for file in os.listdir(config.DB_PATH):
+        os.remove(os.path.join(config.DB_PATH, file))
     
     if not os.listdir():
         return {
@@ -171,3 +217,23 @@ def del_db():
         }
     else:
         raise HTTPException(status_code=500, detail="Some thing wrong happened.")
+
+@app.get('/img-db-info')
+def get_img_db_info(return_img_file:bool | None = True):
+    '''
+    Get Database information
+    '''
+    numer_of_images = len(os.listdir(config.DB_PATH))
+    pkl_pattern = glob.glob('*.pkl')
+    if len(pkl_pattern) != 0:
+        numer_of_images -= len(pkl_pattern)
+    
+    if return_img_file:
+        return {
+            "number of image": numer_of_images,
+            "all_images_file": os.listdir(config.DB_PATH)
+        }
+    else:
+        return {
+            "number of image": numer_of_images,
+        }
