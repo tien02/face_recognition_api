@@ -3,3 +3,5 @@ fastapi==0.92.0
 numpy==1.23.2
 opencv_contrib_python==4.7.0.68
 Pillow==9.4.0
+uvicorn==0.20.0
+python-multipart

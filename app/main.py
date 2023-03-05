@@ -19,62 +19,25 @@ def root():
         "message": "Welcome to Face Recognition API."
     }
 
-@app.post("/recognition/")
-def face_recognition(
-    img_file:UploadFile =  File(...,description="Query image file"),
-    return_image_name:bool = Query(default=True, description="Whether return only image name or full image path"),
-) -> str:
-
+@app.get('/img-db-info')
+def get_img_db_info(return_img_file:bool | None = True):
     '''
-    Do Face Recognition task, give the image which is 
-    the most similar with the input image from the 
-    database - in this case is a folder of images
-
-    Return path to the most similar image file
+    Get Database information
     '''
+    numer_of_images = len(os.listdir(config.DB_PATH))
+    pkl_pattern = glob.glob('*.pkl')
+    if len(pkl_pattern) != 0:
+        numer_of_images -= len(pkl_pattern)
     
-    empty = check_empty_db()
-    if empty:
-        return "No image found in the database"
-
-    if len(os.listdir(config.DB_PATH)) == 0:
+    if return_img_file:
         return {
-            "message": "No image found in the database."
+            "number of image": numer_of_images,
+            "all_images_file": os.listdir(config.DB_PATH)
         }
-    
-    if not os.path.exists("query"):
-        os.makedirs("query")
-
-    query_img_path = os.path.join("query", img_file.filename)
-
-    with open(query_img_path, "wb") as w:
-        shutil.copyfileobj(img_file.file, w)
-
-    df = DeepFace.find(img_path=query_img_path, 
-                        db_path = config.DB_PATH, 
-                        model_name = config.MODELS[config.MODEL_ID], 
-                        distance_metric = config.METRICS[config.METRIC_ID], 
-                        detector_backend = config.DETECTORS[config.DETECTOR_ID], 
-                        silent = True, align = True, prog_bar = False)
-    
-    os.remove(query_img_path)
-
-    if not df.empty:
-        path_to_img, metric = df.columns
-        ascending = True
-        if config.METRIC_ID == 0:
-            ascending = False
-        df = df.sort_values(by=[metric], ascending=ascending)
-        value_img_path = df[path_to_img].iloc[0]
-
-        if return_image_name:
-            return_value = value_img_path.split(os.path.sep)[-1]
-            return_value = return_value.split(".")[0]
-            return return_value
-        else:
-            return value_img_path
     else:
-        return "No Image Found"
+        return {
+            "number of image": numer_of_images,
+        }
 
 @app.post('/register')
 def face_register(
@@ -136,6 +99,63 @@ def face_register(
     return {
         "message": f"{img_file.filename} has been save at {save_img_dir}.",
     }
+
+@app.post("/recognition/")
+def face_recognition(
+    img_file:UploadFile =  File(...,description="Query image file"),
+    return_image_name:bool = Query(default=True, description="Whether return only image name or full image path"),
+) -> str:
+
+    '''
+    Do Face Recognition task, give the image which is 
+    the most similar with the input image from the 
+    database - in this case is a folder of images
+
+    Return path to the most similar image file
+    '''
+    
+    empty = check_empty_db()
+    if empty:
+        return "No image found in the database"
+
+    if len(os.listdir(config.DB_PATH)) == 0:
+        return {
+            "message": "No image found in the database."
+        }
+    
+    if not os.path.exists("query"):
+        os.makedirs("query")
+
+    query_img_path = os.path.join("query", img_file.filename)
+
+    with open(query_img_path, "wb") as w:
+        shutil.copyfileobj(img_file.file, w)
+
+    df = DeepFace.find(img_path=query_img_path, 
+                        db_path = config.DB_PATH, 
+                        model_name = config.MODELS[config.MODEL_ID], 
+                        distance_metric = config.METRICS[config.METRIC_ID], 
+                        detector_backend = config.DETECTORS[config.DETECTOR_ID], 
+                        silent = True, align = True, prog_bar = False)
+    
+    os.remove(query_img_path)
+
+    if not df.empty:
+        path_to_img, metric = df.columns
+        ascending = True
+        if config.METRIC_ID == 0:
+            ascending = False
+        df = df.sort_values(by=[metric], ascending=ascending)
+        value_img_path = df[path_to_img].iloc[0]
+
+        if return_image_name:
+            return_value = value_img_path.split(os.path.sep)[-1]
+            return_value = return_value.split(".")[0]
+            return return_value
+        else:
+            return value_img_path
+    else:
+        return "No Image Found"
     
 @app.put('/change-file-name')
 def change_img_name(
@@ -211,29 +231,9 @@ def del_db():
     for file in os.listdir(config.DB_PATH):
         os.remove(os.path.join(config.DB_PATH, file))
     
-    if not os.listdir():
+    if len(os.listdir(config.DB_PATH)):
         return {
             "message": "All file have been deleted!"
         }
     else:
         raise HTTPException(status_code=500, detail="Some thing wrong happened.")
-
-@app.get('/img-db-info')
-def get_img_db_info(return_img_file:bool | None = True):
-    '''
-    Get Database information
-    '''
-    numer_of_images = len(os.listdir(config.DB_PATH))
-    pkl_pattern = glob.glob('*.pkl')
-    if len(pkl_pattern) != 0:
-        numer_of_images -= len(pkl_pattern)
-    
-    if return_img_file:
-        return {
-            "number of image": numer_of_images,
-            "all_images_file": os.listdir(config.DB_PATH)
-        }
-    else:
-        return {
-            "number of image": numer_of_images,
-        }
