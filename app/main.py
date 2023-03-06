@@ -15,9 +15,14 @@ app = FastAPI()
 
 @app.get("/")
 def root():
-    return {
-        "message": "Welcome to Face Recognition API."
-    }
+    if os.path.exists(config.DB_PATH):
+        return {
+            "message": "Welcome to Face Recognition API."
+        }
+    else:
+        return {
+            "message": f"Error when trying to connect {config.DB_PATH}, there is no database available."
+        }
 
 @app.get('/img-db-info')
 def get_img_db_info(return_img_file:bool | None = True):
