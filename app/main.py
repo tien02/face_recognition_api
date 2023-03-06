@@ -22,17 +22,19 @@ def root():
 @app.get('/img-db-info')
 def get_img_db_info(return_img_file:bool | None = True):
     '''
-    Get Database information
+    Get database information
     '''
     numer_of_images = len(os.listdir(config.DB_PATH))
-    pkl_pattern = glob.glob('*.pkl')
+    pkl_pattern = glob.glob(os.path.join(config.DB_PATH, '*.pkl'))
+    pkl_pattern = [file.split('/')[-1] for file in pkl_pattern]
+    
     if len(pkl_pattern) != 0:
         numer_of_images -= len(pkl_pattern)
     
     if return_img_file:
         return {
             "number of image": numer_of_images,
-            "all_images_file": os.listdir(config.DB_PATH)
+            "all_images_file": [file for file in os.listdir(config.DB_PATH) if file not in pkl_pattern],
         }
     else:
         return {
@@ -195,7 +197,7 @@ def change_img_name(
         "message": f"Already change {src_path} file name to {new_path}"
     }
 
-@app.delete('/delete-single-image')
+@app.delete('/del-single-image')
 def del_img(img_path:str = Query(..., description="Path to the image need to be deleted")):
     '''
     Delete single image file in database
@@ -218,10 +220,10 @@ def del_img(img_path:str = Query(..., description="Path to the image need to be 
         "message": f"{img_path} has already been deleted!"
     }
 
-@app.delete('/delete-all-image')
+@app.delete('/reset-db')
 def del_db():
     '''
-    Delete all image file in database ~ Delete database
+    Delete all file in database ~ Delete database
     '''
     empty = check_empty_db()
     if empty:
@@ -231,7 +233,7 @@ def del_db():
     for file in os.listdir(config.DB_PATH):
         os.remove(os.path.join(config.DB_PATH, file))
     
-    if len(os.listdir(config.DB_PATH)):
+    if len(os.listdir(config.DB_PATH)) == 0:
         return {
             "message": "All file have been deleted!"
         }
