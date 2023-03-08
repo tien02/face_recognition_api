@@ -1,1 +1,1 @@
-docker build -t face-recognition-api .
+sudo docker build -t face-recognition-api .
