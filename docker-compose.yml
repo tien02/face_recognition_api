@@ -2,6 +2,7 @@ version: '3'
 services:
   app:
     build: .
+    container_name: face-recog-container
     command: uvicorn app.main:app --host 0.0.0.0 --port 80
     ports:
       - 80:80
