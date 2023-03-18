@@ -7,6 +7,7 @@ from PIL import Image
 from deepface import DeepFace
 from app.utils import remove_representation, check_empty_db
 
+from fastapi.responses import FileResponse
 from fastapi import FastAPI, Query, HTTPException, File, UploadFile
 
 import numpy as np
@@ -201,6 +202,21 @@ def change_img_name(
     return {
         "message": f"Already change {src_path} file name to {new_path}"
     }
+
+@app.get('/show_img/{img_path}')
+def show_img(img_path: str | None = None):
+
+    empty = empty = check_empty_db()
+    if empty:
+        return "No image found in the database"
+    
+    if img_path is None:
+        return {
+            "error": "Client should provide image file name"
+        }
+    
+    img_pattern = glob.glob(os.path.join(config.DB_PATH, "*" + img_path + "*"))
+    return FileResponse(img_pattern[0])
 
 @app.delete('/del-single-image')
 def del_img(img_path:str = Query(..., description="Path to the image need to be deleted")):
