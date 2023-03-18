@@ -39,12 +39,12 @@ def get_img_db_info(return_img_file:bool | None = True):
     
     if return_img_file:
         return {
-            "number of image": numer_of_images,
+            "number_of_image": numer_of_images,
             "all_images_file": [file for file in os.listdir(config.DB_PATH) if file not in pkl_pattern],
         }
     else:
         return {
-            "number of image": numer_of_images,
+            "number_of_image": numer_of_images,
         }
 
 @app.post('/register')
@@ -112,7 +112,7 @@ def face_register(
 def face_recognition(
     img_file:UploadFile =  File(...,description="Query image file"),
     return_image_name:bool = Query(default=True, description="Whether return only image name or full image path"),
-) -> str:
+):
 
     '''
     Do Face Recognition task, give the image which is 
@@ -139,12 +139,17 @@ def face_recognition(
     with open(query_img_path, "wb") as w:
         shutil.copyfileobj(img_file.file, w)
 
-    df = DeepFace.find(img_path=query_img_path, 
-                        db_path = config.DB_PATH, 
-                        model_name = config.MODELS[config.MODEL_ID], 
-                        distance_metric = config.METRICS[config.METRIC_ID], 
-                        detector_backend = config.DETECTORS[config.DETECTOR_ID], 
-                        silent = True, align = True, prog_bar = False)
+    try:
+        df = DeepFace.find(img_path=query_img_path, 
+                            db_path = config.DB_PATH, 
+                            model_name = config.MODELS[config.MODEL_ID], 
+                            distance_metric = config.METRICS[config.METRIC_ID], 
+                            detector_backend = config.DETECTORS[config.DETECTOR_ID], 
+                            silent = True, align = True, prog_bar = False)
+    except:
+        return {
+            'error': "Error happening when trying to detecting face or reconition"
+        }
     
     os.remove(query_img_path)
 
@@ -159,11 +164,17 @@ def face_recognition(
         if return_image_name:
             return_value = value_img_path.split(os.path.sep)[-1]
             return_value = return_value.split(".")[0]
-            return return_value
+            return {
+                "result": return_value,
+            }
         else:
-            return value_img_path
+            return {
+                "result": value_img_path,
+            }
     else:
-        return "No Image Found"
+        return {
+            "result": "No faces have been found"
+        }
     
 @app.put('/change-file-name')
 def change_img_name(
