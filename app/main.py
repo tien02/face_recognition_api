@@ -16,6 +16,9 @@ app = FastAPI()
 
 @app.get("/")
 def root():
+    '''
+    Greeting!!!
+    '''
     if os.path.exists(config.DB_PATH):
         return {
             "message": "Welcome to Face Recognition API."
@@ -25,10 +28,11 @@ def root():
             "message": f"Error when trying to connect {config.DB_PATH}, there is no database available."
         }
 
+
 @app.get('/img-db-info')
 def get_img_db_info(return_img_file:bool | None = True):
     '''
-    Get database information
+    Get database information, return all files in the database
     '''
     numer_of_images = len(os.listdir(config.DB_PATH))
     pkl_pattern = glob.glob(os.path.join(config.DB_PATH, '*.pkl'))
@@ -47,6 +51,29 @@ def get_img_db_info(return_img_file:bool | None = True):
             "number_of_image": numer_of_images,
         }
 
+
+@app.get('/show_img/{img_path}')
+def show_img(img_path: str | None = None):
+    '''
+    Return image file from given image name
+
+    Arguments:  
+        img_path(str): image file
+        return_image_name(bool): Decide whether return only image file (img) or image file with extension (img.[jpg|jpeg])
+    '''
+    empty = empty = check_empty_db()
+    if empty:
+        return "No image found in the database"
+    
+    if img_path is None:
+        return {
+            "error": "Client should provide image file name"
+        }
+    
+    img_pattern = glob.glob(os.path.join(config.DB_PATH, "*" + img_path + "*"))
+    return FileResponse(img_pattern[0])
+
+
 @app.post('/register')
 def face_register(
     img_file: UploadFile | None = File(None, description="Upload Image"),
@@ -56,6 +83,10 @@ def face_register(
     ),):
     '''
     Add new user to the database by face registering. Resize image if necessary.
+
+     Arguments:  
+        img_file(File): upload image file
+        img_save_name(string): name of image file need to be saved
     '''
 
     if img_file is None:
@@ -108,6 +139,7 @@ def face_register(
         "message": f"{img_file.filename} has been save at {save_img_dir}.",
     }
 
+
 @app.post("/recognition/")
 def face_recognition(
     img_file:UploadFile =  File(...,description="Query image file"),
@@ -119,9 +151,13 @@ def face_recognition(
     the most similar with the input image from the 
     database - in this case is a folder of images
 
-    Return path to the most similar image file
+    Arguments:  
+        img_file(File): image file
+        return_image_name(bool): Decide whether return only image file (img) or image file with extension (img.[jpg|jpeg])
+    Return:
+        Return path to the most similar image file
     '''
-    
+
     empty = check_empty_db()
     if empty:
         return "No image found in the database"
@@ -175,7 +211,8 @@ def face_recognition(
         return {
             "result": "No faces have been found"
         }
-    
+
+
 @app.put('/change-file-name')
 def change_img_name(
     src_path:str = Query(..., description="File image going to be change"), 
@@ -214,20 +251,6 @@ def change_img_name(
         "message": f"Already change {src_path} file name to {new_path}"
     }
 
-@app.get('/show_img/{img_path}')
-def show_img(img_path: str | None = None):
-
-    empty = empty = check_empty_db()
-    if empty:
-        return "No image found in the database"
-    
-    if img_path is None:
-        return {
-            "error": "Client should provide image file name"
-        }
-    
-    img_pattern = glob.glob(os.path.join(config.DB_PATH, "*" + img_path + "*"))
-    return FileResponse(img_pattern[0])
 
 @app.delete('/del-single-image')
 def del_img(img_path:str = Query(..., description="Path to the image need to be deleted")):
@@ -251,6 +274,7 @@ def del_img(img_path:str = Query(..., description="Path to the image need to be 
     return {
         "message": f"{img_path} has already been deleted!"
     }
+
 
 @app.delete('/reset-db')
 def del_db():
