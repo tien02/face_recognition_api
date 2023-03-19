@@ -175,17 +175,17 @@ def face_recognition(
     with open(query_img_path, "wb") as w:
         shutil.copyfileobj(img_file.file, w)
 
-    try:
-        df = DeepFace.find(img_path=query_img_path, 
-                            db_path = config.DB_PATH, 
-                            model_name = config.MODELS[config.MODEL_ID], 
-                            distance_metric = config.METRICS[config.METRIC_ID], 
-                            detector_backend = config.DETECTORS[config.DETECTOR_ID], 
-                            silent = True, align = True, prog_bar = False)
-    except:
-        return {
-            'error': "Error happening when trying to detecting face or reconition"
-        }
+    # try:
+    df = DeepFace.find(img_path=query_img_path, 
+                        db_path = config.DB_PATH, 
+                        model_name = config.MODELS[config.MODEL_ID], 
+                        distance_metric = config.METRICS[config.METRIC_ID], 
+                        detector_backend = config.DETECTORS[config.DETECTOR_ID], 
+                        silent = True, align = True, prog_bar = False, enforce_detection=False)
+    # except:
+    #     return {
+    #         'error': "Error happening when trying to detecting face or reconition"
+    #     }
     
     os.remove(query_img_path)
 
