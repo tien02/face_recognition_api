@@ -37,14 +37,19 @@ def get_img_db_info(return_img_file:bool | None = True):
     numer_of_images = len(os.listdir(config.DB_PATH))
     pkl_pattern = glob.glob(os.path.join(config.DB_PATH, '*.pkl'))
     pkl_pattern = [file.split('/')[-1] for file in pkl_pattern]
+
+    hidden_pattern = glob.glob(os.path.join(config.DB_PATH, ".*"))
+    hidden_pattern = [file.split('/')[-1] for file in hidden_pattern]
     
+    unshow_file = pkl_pattern + hidden_pattern
+
     if len(pkl_pattern) != 0:
-        numer_of_images -= len(pkl_pattern)
+        numer_of_images -= len(unshow_file)
     
     if return_img_file:
         return {
             "number_of_image": numer_of_images,
-            "all_images_file": [file for file in os.listdir(config.DB_PATH) if file not in pkl_pattern],
+            "all_images_file": [file for file in os.listdir(config.DB_PATH) if file not in unshow_file],
         }
     else:
         return {
@@ -77,6 +82,9 @@ def show_img(img_path: str | None = None):
 @app.post('/register')
 def face_register(
     img_file: UploadFile | None = File(None, description="Upload Image"),
+    to_gray: bool | None = Query(
+            default=True, 
+            description="Whether save image in gray scale or not"),
     img_save_name: str | None = Query(
         default=None,
         description="File's name to be save, file extension can be available or not",
@@ -114,14 +122,24 @@ def face_register(
     if os.path.exists(save_img_dir):
         raise HTTPException(status_code=409, detail=f"{save_img_dir} has already in the database.")
     
-    if config.RESIZE:
+    if (config.RESIZE is False) and (to_gray is False):
+        with open(save_img_dir, "wb") as w:
+            shutil.copyfileobj(img_file.file, w)
+
+    else:
         try:
             image = Image.open(img_file.file)
             if image.mode in ("RGBA", "P"):
                 image = image.convert("RGB")
-            image = image.resize(config.SIZE)
+            
+            if config.RESIZE:
+                image = image.resize(config.SIZE)
+
             np_image = np.array(image)
             np_image = cv.cvtColor(np_image, cv.COLOR_RGB2BGR)
+
+            if to_gray:
+                np_image = cv.cvtColor(np_image, cv.COLOR_BGR2GRAY)
 
             cv.imwrite(save_img_dir, np_image)
         except:
@@ -129,10 +147,7 @@ def face_register(
         finally:
             img_file.file.close()
             image.close()
-  
-    else:
-        with open(save_img_dir, "wb") as w:
-            shutil.copyfileobj(img_file.file, w)
+        
 
     remove_representation() # delete all representation_*.pkl created by DeepFace.find
     return {
@@ -143,6 +158,9 @@ def face_register(
 @app.post("/recognition/")
 def face_recognition(
     img_file:UploadFile =  File(...,description="Query image file"),
+    to_gray: bool | None = Query(
+            default=True, 
+            description="Whether save image in gray scale or not"),
     return_image_name:bool = Query(default=True, description="Whether return only image name or full image path"),
 ):
 
@@ -172,8 +190,17 @@ def face_recognition(
 
     query_img_path = os.path.join("query", img_file.filename)
 
-    with open(query_img_path, "wb") as w:
-        shutil.copyfileobj(img_file.file, w)
+    if to_gray:
+        image = Image.open(img_file.file)
+        if image.mode in ("RGBA", "P"):
+            image = image.convert("RGB")
+        np_image = np.array(image)
+        np_image = cv.cvtColor(np_image, cv.COLOR_BGR2GRAY)
+
+        cv.imwrite(query_img_path, np_image)
+    else:
+        with open(query_img_path, "wb") as w:
+            shutil.copyfileobj(img_file.file, w)
 
     # try:
     df = DeepFace.find(img_path=query_img_path, 
