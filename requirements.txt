@@ -1,4 +1,5 @@
 deepface==0.0.75
+mediapipe
 fastapi==0.92.0
 numpy==1.23.2
 opencv_contrib_python==4.7.0.68

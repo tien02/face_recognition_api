@@ -9,21 +9,21 @@
 This is how the project directory is structured:
 ```
 ├── app
-│   ├── app
-│   │   ├── config.py
-│   │   ├── main.py
-│   │   ├── utils.py
-|   |
-│   ├── data  # Database - Folder of images
-│   │   ├── *.[jpg | jpeg]
-|   |
-│   ├── query  # Query - Folder of images need to find id
-│   │   ├── *.[jpg | jpeg]
-|   |
-|   ├── Dockerfile
-|   ├── docker_build.sh
-|   ├── docker_run_it.sh
-|   ├── docker_run_server.sh
+│   ├── config.py
+│   ├── main.py
+│   └── utils.py
+│   ├── data    # Database - Folder of images
+│   │   ├── *.[jpg | jpeg]
+|
+├── query   # Query - Folder of images need to find id
+│   ├── *.[jpg | jpeg]
+|
+├── docker-compose.yml
+├── docker_build.sh
+├── docker_run_it_test.sh
+├── docker_run_server.sh
+├── requirements.txt
+└── uvicorn_run.sh
 ```
 
  * `data`: "database" which contains all users image uniquely by their id/name.
@@ -43,8 +43,9 @@ This is how the project directory is structured:
 ```
 pip install -r requirements.txt
 ```
+2. Create `./app/data` and `./query` as directory structure above.
 
-2. Run the server
+3. Run the server
 ```
 uvicorn app.main:app --host 0.0.0.0 --port 80
 ```
