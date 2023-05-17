@@ -113,7 +113,6 @@ def face_register(
         img_file(File): upload image file
         img_save_name(string): name of image file need to be saved
     '''
-
     if img_file is None:
         return {
             "message": "Image file need to be sent!",
@@ -132,10 +131,14 @@ def face_register(
         else:
             save_img_dir = os.path.join(config.DB_PATH, img_save_name + "." + extension)
         
-    
     else:
-        save_img_dir = os.path.join(config.DB_PATH, img_file.filename)
-    
+        if '/' in img_file.filename:    
+            save_img_dir = os.path.join(config.DB_PATH, img_file.filename.split('/')[-1])
+        elif "\\" in img_file.filename:
+            save_img_dir = os.path.join(config.DB_PATH, img_file.filename.split("\\")[-1])
+        else:
+            save_img_dir = os.path.join(config.DB_PATH, img_file.filename)
+
     if os.path.exists(save_img_dir):
         raise HTTPException(status_code=409, detail=f"{save_img_dir} has already in the database.")
     
@@ -192,7 +195,6 @@ def face_recognition(
     Return:
         Return path to the most similar image file
     '''
-
     empty = check_empty_db()
     if empty:
         return "No image found in the database"
@@ -205,7 +207,12 @@ def face_recognition(
     if not os.path.exists("query"):
         os.makedirs("query")
 
-    query_img_path = os.path.join("query", img_file.filename)
+    if '/' in img_file.filename:    
+        query_img_path = os.path.join("query", img_file.filename.split('/')[-1])
+    elif "\\" in img_file.filename:
+        query_img_path = os.path.join("query", img_file.filename.split("\\")[-1])
+    else:
+        query_img_path = os.path.join("query", img_file.filename)
 
     if to_gray:
         image = Image.open(img_file.file)
@@ -228,7 +235,7 @@ def face_recognition(
                         silent = True, align = True, prog_bar = False, enforce_detection=False)
     # except:
     #     return {
-    #         'error': "Error happening when trying to detecting face or reconition"
+    #         'error': "Error happening when trying to detecting face or recognition"
     #     }
     
     os.remove(query_img_path)
