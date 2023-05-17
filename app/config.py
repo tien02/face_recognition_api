@@ -3,8 +3,8 @@
 # follow Model's Argument Options below
 # Start at index 0
 METRIC_ID = 2
-MODEL_ID = 2
-DETECTOR_ID = 0
+MODEL_ID = 6
+DETECTOR_ID = 5
 
 ### Data Config
 DB_PATH = "app/data"  # relative path to images database (in this case is a folder of image)

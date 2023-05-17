@@ -51,6 +51,7 @@ def get_img_db_info(return_img_file:bool | None = True):
     '''
     Get database information, return all files in the database
     '''
+    # Remove unnecessary file
     numer_of_images = len(os.listdir(config.DB_PATH))
     pkl_pattern = glob.glob(os.path.join(config.DB_PATH, '*.pkl'))
     pkl_pattern = [file.split('/')[-1] for file in pkl_pattern]
@@ -119,19 +120,25 @@ def face_register(
         }
 
     save_img_dir = ''
+
+    # Check save name is correctly
     if img_save_name is not None:
 
         extension = img_file.filename.split(".")[-1]
+
+        # if img_save_name have extension
         if "." in img_save_name:
             img_save_name_extension = img_save_name.split(".")[-1]
             if extension != img_save_name_extension:
                 raise HTTPException(status_code=404, detail='File extension should match')
             save_img_dir = os.path.join(config.DB_PATH, img_save_name)
 
+        # Save name + extension
         else:
             save_img_dir = os.path.join(config.DB_PATH, img_save_name + "." + extension)
-        
+    # If not save name
     else:
+        # Request file name is save name
         if '/' in img_file.filename:    
             save_img_dir = os.path.join(config.DB_PATH, img_file.filename.split('/')[-1])
         elif "\\" in img_file.filename:
@@ -139,9 +146,11 @@ def face_register(
         else:
             save_img_dir = os.path.join(config.DB_PATH, img_file.filename)
 
+    # Raise error if there is duplicate
     if os.path.exists(save_img_dir):
         raise HTTPException(status_code=409, detail=f"{save_img_dir} has already in the database.")
     
+    # Save image to database
     if (config.RESIZE is False) and (to_gray is False):
         with open(save_img_dir, "wb") as w:
             shutil.copyfileobj(img_file.file, w)
@@ -195,6 +204,8 @@ def face_recognition(
     Return:
         Return path to the most similar image file
     '''
+
+    # Check if database is empty
     empty = check_empty_db()
     if empty:
         return "No image found in the database"
@@ -204,6 +215,7 @@ def face_recognition(
             "message": "No image found in the database."
         }
     
+    # Save query image to ./query
     if not os.path.exists("query"):
         os.makedirs("query")
 
@@ -214,6 +226,7 @@ def face_recognition(
     else:
         query_img_path = os.path.join("query", img_file.filename)
 
+    # Convert image to gray (if necessary) then save it
     if to_gray:
         image = Image.open(img_file.file)
         if image.mode in ("RGBA", "P"):
@@ -226,6 +239,7 @@ def face_recognition(
         with open(query_img_path, "wb") as w:
             shutil.copyfileobj(img_file.file, w)
 
+    # Face detection - recognition
     # try:
     df = DeepFace.find(img_path=query_img_path, 
                         db_path = config.DB_PATH, 
@@ -238,8 +252,10 @@ def face_recognition(
     #         'error': "Error happening when trying to detecting face or recognition"
     #     }
     
+    # Remove query image
     os.remove(query_img_path)
 
+    # If faces are detected/recognized
     if not df.empty:
         path_to_img, metric = df.columns
         ascending = True
